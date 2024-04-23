@@ -1,0 +1,73 @@
+<html>
+<head>
+<title>main.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+.s4 { color: #6aab73;}
+.s5 { color: #2aacb8;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span><span class="s1">flask </span><span class="s0">import </span><span class="s1">Flask</span><span class="s2">, </span><span class="s1">render_template</span><span class="s2">, </span><span class="s1">request</span>
+<span class="s0">import </span><span class="s1">pickle</span>
+<span class="s0">import </span><span class="s1">nltk</span>
+<span class="s0">from </span><span class="s1">nltk</span><span class="s2">.</span><span class="s1">tokenize </span><span class="s0">import </span><span class="s1">word_tokenize</span>
+<span class="s0">from </span><span class="s1">nltk</span><span class="s2">.</span><span class="s1">stem </span><span class="s0">import </span><span class="s1">LancasterStemmer</span>
+<span class="s0">from </span><span class="s1">sklearn</span><span class="s2">.</span><span class="s1">feature_extraction</span><span class="s2">.</span><span class="s1">text </span><span class="s0">import </span><span class="s1">TfidfVectorizer</span>
+
+<span class="s1">app </span><span class="s2">= </span><span class="s1">Flask</span><span class="s2">(</span><span class="s1">__name__</span><span class="s2">)</span>
+
+<span class="s3"># Load the trained model</span>
+<span class="s1">pipe </span><span class="s2">= </span><span class="s1">pickle</span><span class="s2">.</span><span class="s1">load</span><span class="s2">(</span><span class="s1">open</span><span class="s2">(</span><span class="s4">&quot;Naive_model.pkl&quot;</span><span class="s2">, </span><span class="s4">&quot;rb&quot;</span><span class="s2">))</span>
+
+<span class="s3"># Initialize NLTK components for preprocessing</span>
+<span class="s1">nltk</span><span class="s2">.</span><span class="s1">download</span><span class="s2">(</span><span class="s4">&quot;punkt&quot;</span><span class="s2">)</span>
+<span class="s1">lstem </span><span class="s2">= </span><span class="s1">LancasterStemmer</span><span class="s2">()</span>
+<span class="s1">tfidf_vec </span><span class="s2">= </span><span class="s1">TfidfVectorizer</span><span class="s2">(</span><span class="s1">stop_words</span><span class="s2">=</span><span class="s4">'english'</span><span class="s2">)</span>
+
+
+<span class="s2">@</span><span class="s1">app</span><span class="s2">.</span><span class="s1">route</span><span class="s2">(</span><span class="s4">'/'</span><span class="s2">, </span><span class="s1">methods</span><span class="s2">=[</span><span class="s4">&quot;GET&quot;</span><span class="s2">, </span><span class="s4">&quot;POST&quot;</span><span class="s2">])</span>
+<span class="s0">def </span><span class="s1">main_function</span><span class="s2">():</span>
+    <span class="s0">if </span><span class="s1">request</span><span class="s2">.</span><span class="s1">method </span><span class="s2">== </span><span class="s4">&quot;POST&quot;</span><span class="s2">:</span>
+        <span class="s3"># Get the input email text from the form</span>
+        <span class="s1">text </span><span class="s2">= </span><span class="s1">request</span><span class="s2">.</span><span class="s1">form</span>
+        <span class="s1">emails </span><span class="s2">= </span><span class="s1">text</span><span class="s2">[</span><span class="s4">'email'</span><span class="s2">]</span>
+
+        <span class="s3"># Preprocess the input email text</span>
+        <span class="s1">email_processed </span><span class="s2">= </span><span class="s1">preprocess</span><span class="s2">(</span><span class="s1">emails</span><span class="s2">)</span>
+
+        <span class="s3"># Make prediction</span>
+        <span class="s1">output </span><span class="s2">= </span><span class="s1">pipe</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">([</span><span class="s1">email_processed</span><span class="s2">])[</span><span class="s5">0</span><span class="s2">]</span>
+
+        <span class="s0">return </span><span class="s1">render_template</span><span class="s2">(</span><span class="s4">&quot;show.html&quot;</span><span class="s2">, </span><span class="s1">prediction</span><span class="s2">=</span><span class="s1">output</span><span class="s2">)</span>
+
+    <span class="s0">else</span><span class="s2">:</span>
+        <span class="s0">return </span><span class="s1">render_template</span><span class="s2">(</span><span class="s4">&quot;index.html&quot;</span><span class="s2">)</span>
+
+
+<span class="s0">def </span><span class="s1">preprocess</span><span class="s2">(</span><span class="s1">email</span><span class="s2">):</span>
+    <span class="s3"># Tokenize the email text</span>
+    <span class="s1">tokens </span><span class="s2">= </span><span class="s1">word_tokenize</span><span class="s2">(</span><span class="s1">email</span><span class="s2">)</span>
+    <span class="s3"># Stem the tokens</span>
+    <span class="s1">stemmed_tokens </span><span class="s2">= [</span><span class="s1">lstem</span><span class="s2">.</span><span class="s1">stem</span><span class="s2">(</span><span class="s1">token</span><span class="s2">) </span><span class="s0">for </span><span class="s1">token </span><span class="s0">in </span><span class="s1">tokens</span><span class="s2">]</span>
+    <span class="s3"># Join the stemmed tokens back into text</span>
+    <span class="s1">email_processed </span><span class="s2">= </span><span class="s4">' '</span><span class="s2">.</span><span class="s1">join</span><span class="s2">(</span><span class="s1">stemmed_tokens</span><span class="s2">)</span>
+    <span class="s0">return </span><span class="s1">email_processed</span>
+
+
+<span class="s0">if </span><span class="s1">__name__ </span><span class="s2">== </span><span class="s4">'__main__'</span><span class="s2">:</span>
+    <span class="s1">app</span><span class="s2">.</span><span class="s1">run</span><span class="s2">(</span><span class="s1">debug</span><span class="s2">=</span><span class="s0">True</span><span class="s2">)</span>
+
+
+</pre>
+</body>
+</html>
